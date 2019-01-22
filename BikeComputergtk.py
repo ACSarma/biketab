@@ -5,28 +5,17 @@ import time
 import subprocess
 import math
 import gtk
-#import smbus
 from gps import *
 gi.require_version("Gtk", "3.0")
 from pulsesensor import Pulsesensor
 from flask import Flask
-#from flask_ask import Ask, statement, convert_errors
 import logging
 from gi.repository import Gtk, GObject, Gdk
 GObject.threads_init()
-#bus = smbus.SMBus(1)
 gpsReport = ""
 gpsSpeed = ""
 gpsPos = ""
 gpsDist = ""
-app = Flask(__name__)
-#app = Ask(app, '/')
-
-logging.getLogger("flask_ask").setLevel(logging.DEBUG)
-
-#@ask.intent('GPIOControlIntent', mapping={'action': 'action'})
-
-import random
 
 class AlexaThread(threading.Thread):
     def __init__(self, callback):
@@ -96,9 +85,6 @@ class BikeComputer(object):
     def work_finished_cb(self):
         self.messages.set_label("Alexa is Idle")
         self.messages.modify_fg(Gtk.StateType.NORMAL, Gdk.Color(65535, 13535, 15535))
-        
-    def on_infoBar_close(self):
-        self.speed.set_text("Test")
     
     def on_delete_clicked(self, buttonDelete, data=None):
         self.messages.set_text("-")
@@ -111,15 +97,6 @@ class BikeComputer(object):
         subprocess.call(['sudo', 't'])
         
     def updateSpeed(self):
-        def updateSpeedText():
-            s = 0.0
-            while True:
-                self.speed.set_text('%.2f'%(s))
-                self.locAlert.set_text("Climb: nan\nAlt: 116ft\nLat/Long: 47: 122")
-                s = random.randint(0, 10) / 10
-                time.sleep(1)
-        updateSpeedText()
-        """
         subprocess.call(['ls', '/dev/ttyUSB*'])
         subprocess.call(['sudo', 'gpsd', '/dev/ttyUSB0', '-F', '/var/run/gpsd.sock'])
         subprocess.call(['cgps'])
@@ -155,18 +132,7 @@ class BikeComputer(object):
                     count += 1
                     latNow = getattr(report,'lat',0.0)
                     longNow = getattr(report,'lon',0.0)
-                    
-                    print(getattr(report,'lat',0.0),"\t",
-                    getattr(report,'lon',0.0),"\t",
-                    getattr(report,'time',''),"\t",
-                    getattr(report,'alt','nan'),"\t\t",
-                    getattr(report,'epv','nan'),"\t",
-                    getattr(report,'ept','nan'),"\t",
-                    getattr(report,'speed','nan'),"\t",
-                    getattr(report,'climb','nan'),"\t",
-                    getattr(report,'heading','nan'),"\t")
                                         
-                    self.locAlert.set_text("Climb: " + getattr(report, 'climb', 'nan'))
                     self.speed.set_text(str(self.speedVal))
                     self.dist = getDistance(oldLat, oldLong, latNow, longNow)
                     self.milesTrip.set_text(str(self.dist) + " mi. trip")
@@ -178,10 +144,11 @@ class BikeComputer(object):
                     self.file.write(str(self.odometer))
                     self.miles.set_text(str(self.odometer) + " mi.")
                     self.avgSpeed.set_text(str(self.dist / count))
+                    self.locAlert.set_text("Climb: " + getattr(report, 'climb', 'nan') + "\nAlt: " + getattr(report, 'alt', 'nan') + "\nLat/Long: " + getattr(report, 'lat', 'nan') + ":" + getattr(report, 'lon', 'nan"))
                 
         except (KeyboardInterrupt, SystemExit): #when you press ctrl+c
             print("Done.\nExiting.")
-            """
+    
     def updateBPM(self):
         self.bpmText.set_text("Test")
         p = Pulsesensor()
@@ -207,17 +174,6 @@ class BikeComputer(object):
             
     def updateTemp(self):
         self.temp.set_text("Test") 
-    
-    def gpio_control(action):
-        
-        if(action == "heartrate"):
-            print(self.bpmVal)
-        elif(action == "temperature"):
-            print(self.tempVal)
-        else:
-            print("Nothing")
-        
-        return statement('Displaying {}'.format(action))
     
     def on_window1_destroy(self, object, data=None):
         self.window.connect("delete-event", Gtk.main_quit)
